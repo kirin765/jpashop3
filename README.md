@@ -16,3 +16,29 @@ public void setMember(Member member) {
     this.member = member;
 }
 ```
+
+##@AllArgsConstructor
+```java
+@AllArgsConstructor
+public class MemberService{
+    private MemberRepository memberRepository;
+    
+    // 생성자 자동생성 및 자동주입
+    // public MemberService(MemberRepository memberRepository) {
+    // this.memberRepository = memberRepository;
+    // }
+}
+```
+
+##@RequiredArgsConstructor
+```java
+@RequiredArgsConstructor
+public class MemberService{
+    private final MemberRepository memberRepository;
+    
+    // final 있는 경우만 자동주입
+    // public MemberService(MemberRepository memberRepository) {
+    // this.memberRepository = memberRepository;
+    // }
+}
+```
