@@ -46,3 +46,31 @@ public class MemberService{
 ##트랜잭션 스크립트 모델, 도메인 모델
 - 트랜잭션 스크립트는 서비스계층에서 비즈니스 로직을 작성
 - 도메인 모델은 핵심 비즈니스 로직을 엔티티계층에서 메소드에 작성
+
+##Entity 대신 DTO
+- Entity에 @NotEmpty같은 스펙이 있을때 경우에 따라 다른 경우 있을 수 있다.
+- DTO를 통해 API 스펙에 영향을 주지않게 관계를 단절
+- 상세 API 스펙에 따른 설정은 DTO에 Entity는 좀 더 일반적으로 사용가능
+```java
+//MemberApiController.java
+@PostMapping("/api/v1/members")
+public CreateMemberResponse saveMemberV1(
+        @RequestBody 
+        @Valid 
+        Member member) {
+    Long id = memberService.join(member);
+    return new CreateMemberResponse(id);
+}
+
+@PostMapping("/api/v2/members")
+public CreateMemberResponse saveMemberV2(
+        @RequestBody 
+        @Valid 
+        CreateMemberRequest request){
+    Member member = new Member();
+    member.setName(request.getName());
+
+    Long id = memberService.join(member);
+    return new CreateMemberResponse(id);
+}
+```
