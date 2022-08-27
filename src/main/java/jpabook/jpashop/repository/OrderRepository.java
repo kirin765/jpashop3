@@ -1,6 +1,11 @@
 package jpabook.jpashop.repository;
 
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import jpabook.jpashop.domain.Order;
+import jpabook.jpashop.domain.OrderStatus;
+import jpabook.jpashop.domain.QMember;
+import jpabook.jpashop.domain.QOrder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
@@ -22,40 +27,40 @@ public class OrderRepository {
     public Order findOne(Long id) {
         return em.find(Order.class, id);
     }
-
-    public List<Order> findAllByString(OrderSearch orderSearch) {
-            //language=JPAQL
-            String jpql = "select o From Order o join o.member m";
-            boolean isFirstCondition = true;
-            //주문 상태 검색
-            if (orderSearch.getOrderStatus() != null) {
-                if (isFirstCondition) {
-                    jpql += " where";
-                    isFirstCondition = false;
-                } else {
-                    jpql += " and";
-                }
-                jpql += " o.status = :status";
-            }
-            //회원 이름 검색
-            if (StringUtils.hasText(orderSearch.getMemberName())) {
-                if (isFirstCondition) {
-                    jpql += " where";
-                    isFirstCondition = false;
-                } else {
-                    jpql += " and";
-                }
-                jpql += " m.name like :name";
-            }
-            TypedQuery<Order> query = em.createQuery(jpql, Order.class) .setMaxResults(1000); //최대 1000건
-            if (orderSearch.getOrderStatus() != null) {
-                query = query.setParameter("status", orderSearch.getOrderStatus());
-            }
-            if (StringUtils.hasText(orderSearch.getMemberName())) {
-                query = query.setParameter("name", orderSearch.getMemberName());
-            }
-            return query.getResultList();
-        }
+//
+//    public List<Order> findAllByString(OrderSearch orderSearch) {
+//            //language=JPAQL
+//            String jpql = "select o From Order o join o.member m";
+//            boolean isFirstCondition = true;
+//            //주문 상태 검색
+//            if (orderSearch.getOrderStatus() != null) {
+//                if (isFirstCondition) {
+//                    jpql += " where";
+//                    isFirstCondition = false;
+//                } else {
+//                    jpql += " and";
+//                }
+//                jpql += " o.status = :status";
+//            }
+//            //회원 이름 검색
+//            if (StringUtils.hasText(orderSearch.getMemberName())) {
+//                if (isFirstCondition) {
+//                    jpql += " where";
+//                    isFirstCondition = false;
+//                } else {
+//                    jpql += " and";
+//                }
+//                jpql += " m.name like :name";
+//            }
+//            TypedQuery<Order> query = em.createQuery(jpql, Order.class) .setMaxResults(1000); //최대 1000건
+//            if (orderSearch.getOrderStatus() != null) {
+//                query = query.setParameter("status", orderSearch.getOrderStatus());
+//            }
+//            if (StringUtils.hasText(orderSearch.getMemberName())) {
+//                query = query.setParameter("name", orderSearch.getMemberName());
+//            }
+//            return query.getResultList();
+//        }
 
     public List<Order> findAllWithMemberDelivery() {
         return em.createQuery("" +
@@ -79,6 +84,35 @@ public class OrderRepository {
                 " join fetch o.orderItems oi" +
                 " join fetch oi.item i", Order.class)
                 .getResultList();
+    }
+
+    public List<Order> findAllByString(OrderSearch orderSearch) {
+
+        JPAQueryFactory query = new JPAQueryFactory(em);
+        QOrder order = QOrder.order;
+        QMember member = QMember.member;
+
+        return query
+                .select(order)
+                .from(order)
+                .join(order.member, member)
+                .where(statusEq(orderSearch.getOrderStatus()), nameLike(orderSearch.getMemberName()))
+                .limit(1000)
+                .fetch();
+    }
+
+    private BooleanExpression nameLike(String name) {
+        if(!StringUtils.hasText(name))
+            return null;
+
+        return QMember.member.name.like(name);
+    }
+
+    private BooleanExpression statusEq(OrderStatus statusCond) {
+        if(statusCond == null) {
+            return null;
+        }
+        return QOrder.order.status.eq(statusCond);
     }
 
     public List<Order> findAllWithMemberDelivery(int offset, int limit) {
